@@ -11,7 +11,8 @@ Thanks to Kenny https://www.kenney.nl for the assets.
 
 Thanks to bevy_atmosphere - A procedural sky plugin for bevy https://github.com/JonahPlusPlus/bevy_atmosphere
 
-<img src="img/step1.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br>
+<img src="img/step1.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
+
 
 
 ```Rust
@@ -330,7 +331,8 @@ fn input_user(
 
 ## 4. Step _ display
 
-<img src="img/step4.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br>
+<img src="img/step4.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br><br><br>
+
 
 
 ```Rust
