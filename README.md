@@ -3,8 +3,8 @@
 My third 3D game with rust(https://www.rust-lang.org) and the bevy framework(https://bevyengine.org)
 using Rapier https://github.com/dimforge/bevy_rapier
 
-I am inspired by the classic marble games like #MonkeyBall.  
-    
+I am inspired by the classic marble games like #MonkeyBall.
+
 Thanks to Kenny https://www.kenney.nl for the assets.
 
 ## 1. Step _ setup first level
@@ -12,7 +12,6 @@ Thanks to Kenny https://www.kenney.nl for the assets.
 Thanks to bevy_atmosphere - A procedural sky plugin for bevy https://github.com/JonahPlusPlus/bevy_atmosphere
 
 <img src="img/step1.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br><br><br><br><br>
-
 
 
 ```Rust
@@ -331,8 +330,8 @@ fn input_user(
 
 ## 4. Step _ display
 
-<img src="img/step4.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br><br><br>
-
+<img src="img/step4.png" width="320" align="left"><br><br><br><br><br><br><br><br><br><br>
+<br><br>
 
 
 ```Rust
@@ -433,6 +432,92 @@ fn collision(
                 }
             }
             CollisionEvent::Stopped(_,_,_)=> {}
+        }
+    }
+}
+```
+
+## 6. Step _ collision effect
+
+<img src="img/step6.gif" width="320" align="left"><br><br><br><br><br><br><br><br><br><br>
+
+
+```Rust
+struct CreateEffectEvent(Vec3);
+```
+
+
+```Rust
+fn main() {
+    App::new()
+       ..
+        .add_event::<CreateEffectEvent>()
+      ..
+        .run();
+}
+```
+
+
+```Rust
+const EFFECT_SIZE:f32=0.1;
+const EFFECT_TIME:f32=2.0;
+
+fn create_effect(
+    mut commands: Commands,
+    mut event_create_effect: EventReader<CreateEffectEvent>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+)
+{
+    let mut rng = rand::thread_rng();
+    for event in event_create_effect.iter() {
+        let pos = event.0;
+        for x in -2..2 {
+            for y in 0..2 {
+                for z in -2..2 {
+                    commands
+                        .spawn_bundle(PbrBundle {
+                            mesh: meshes.add(Mesh::from(shape::Box::new(0.1, 0.1, 0.1))),
+                            material: materials.add(StandardMaterial {
+                                metallic: 0.5,
+                                emissive: Color::rgb(1.0, 0.5, 0.0),
+                                ..Default::default()
+                            }),
+                            transform: Transform {
+                                translation: Vec3::new(x as f32 * EFFECT_SIZE+pos.x,
+                                                       y as f32 * EFFECT_SIZE+pos.y,
+                                                       z as f32 * EFFECT_SIZE+pos.z),
+                                rotation: Quat::from_rotation_x(0.0),
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        })
+                        .insert(RigidBody::Dynamic)
+                        .insert(ExternalImpulse {
+                            impulse: Vec3::new(rng.gen_range(-0.01..0.01),
+                                               0.01,
+                                               rng.gen_range(-0.01..0.01)),
+                            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
+                        })
+                        .insert(Timer{value:EFFECT_TIME})
+                        .insert(Sleeping::disabled())
+                        .insert(Collider::cuboid(0.1 / 2.0, 0.1 / 2.0, 0.1 / 2.0));
+                }
+            }
+        }
+    }
+}
+
+fn remove_effect(
+    mut commands: Commands,
+    time:Res<Time>,
+    mut query: Query<(Entity, &mut Timer)>
+)
+{
+    for (entity, mut timer) in query.iter_mut() {
+        timer.value -= time.delta_seconds();
+        if timer.value <= 0.0 {
+            commands.entity(entity).despawn_recursive();
         }
     }
 }

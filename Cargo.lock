@@ -2705,6 +2705,7 @@ dependencies = [
  "bevy",
  "bevy_atmosphere",
  "bevy_rapier3d",
+ "rand",
 ]
 
 [[package]]
