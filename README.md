@@ -3,8 +3,8 @@
 My third 3D game with rust(https://www.rust-lang.org) and the bevy framework(https://bevyengine.org)
 using Rapier https://github.com/dimforge/bevy_rapier
 
-I am inspired by the classic marble games like #MonkeyBall.
-
+I am inspired by the classic marble games like #MonkeyBall.  
+    
 Thanks to Kenny https://www.kenney.nl for the assets.
 
 ## 1. Step _ setup first level
@@ -474,35 +474,35 @@ fn create_effect(
         let pos = event.0;
         for x in -2..2 {
             for y in 0..2 {
-                for z in -2..2 {
-                    commands
-                        .spawn_bundle(PbrBundle {
-                            mesh: meshes.add(Mesh::from(shape::Box::new(0.1, 0.1, 0.1))),
-                            material: materials.add(StandardMaterial {
-                                metallic: 0.5,
-                                emissive: Color::rgb(1.0, 0.5, 0.0),
-                                ..Default::default()
-                            }),
-                            transform: Transform {
-                                translation: Vec3::new(x as f32 * EFFECT_SIZE+pos.x,
-                                                       y as f32 * EFFECT_SIZE+pos.y,
-                                                       z as f32 * EFFECT_SIZE+pos.z),
-                                rotation: Quat::from_rotation_x(0.0),
-                                ..Default::default()
-                            },
+            for z in -2..2 {
+                commands
+                    .spawn_bundle(PbrBundle {
+                        mesh: meshes.add(Mesh::from(shape::Box::new(0.1, 0.1, 0.1))),
+                        material: materials.add(StandardMaterial {
+                            metallic: 0.5,
+                            emissive: Color::rgb(1.0, 0.5, 0.0),
                             ..Default::default()
-                        })
-                        .insert(RigidBody::Dynamic)
-                        .insert(ExternalImpulse {
-                            impulse: Vec3::new(rng.gen_range(-0.01..0.01),
-                                               0.01,
-                                               rng.gen_range(-0.01..0.01)),
-                            torque_impulse: Vec3::new(0.0, 0.0, 0.0),
-                        })
-                        .insert(Timer{value:EFFECT_TIME})
-                        .insert(Sleeping::disabled())
-                        .insert(Collider::cuboid(0.1 / 2.0, 0.1 / 2.0, 0.1 / 2.0));
-                }
+                        }),
+                        transform: Transform {
+                            translation: Vec3::new(x as f32 * EFFECT_SIZE+pos.x,
+                                                   y as f32 * EFFECT_SIZE+pos.y,
+                                                   z as f32 * EFFECT_SIZE+pos.z),
+                            rotation: Quat::from_rotation_x(0.0),
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    })
+                    .insert(RigidBody::Dynamic)
+                    .insert(ExternalImpulse {
+                        impulse: Vec3::new(rng.gen_range(-0.01..0.01),
+                                           0.01,
+                                           rng.gen_range(-0.01..0.01)),
+                        torque_impulse: Vec3::new(0.0, 0.0, 0.0),
+                    })
+                    .insert(Timer{value:EFFECT_TIME})
+                    .insert(Sleeping::disabled())
+                    .insert(Collider::cuboid(0.1 / 2.0, 0.1 / 2.0, 0.1 / 2.0));
+                 }
             }
         }
     }
@@ -520,5 +520,88 @@ fn remove_effect(
             commands.entity(entity).despawn_recursive();
         }
     }
+}
+```
+
+## 7. Step _ camera
+
+<img src="img/step7.gif" width="320" align="left"><br><br><br><br><br><br><br><br><br><br>
+
+
+```Rust
+#[derive(Component)]
+struct ThirdPersonTarget;
+
+#[derive(Component)]
+struct ThirdPersonCamera{
+    ideal_offset:Vec3,
+    ideal_lookat:Vec3,
+    current_lookat:Vec3,
+    lookat_aviabel:bool,
+    follow:f32
+}
+impl Default for ThirdPersonCamera {
+    fn default() -> Self {
+        Self {
+            ideal_offset: Vec3::new(0.0,2.0,6.0),
+            ideal_lookat: Vec3::new(0.0,0.0,-4.0),
+            current_lookat: Vec3::new(0.0,0.0,0.0),
+            lookat_aviabel: false,
+            follow: 1.2
+        }
+    }
+}
+```
+
+
+```Rust
+fn setup(
+   ..
+) {
+    commands.spawn_bundle(PerspectiveCameraBundle{
+        transform: Transform::from_xyz(0.0,1.0,0.0).looking_at(Vec3::new(0.,0.,-4.), Vec3::Y),
+        ..Default::default()
+    })
+        .insert(ThirdPersonCamera{..Default::default()});
+
+    ..
+    commands
+    .spawn_bundle(PbrBundle {
+       ..
+        .insert(ActiveEvents::COLLISION_EVENTS)
+        .insert(ThirdPersonTarget{})
+        .insert(Ball{});
+
+}
+```
+
+
+```Rust
+fn move_camera(
+    time:Res<Time>,
+    mut query_camera: Query<(&mut Transform, &mut ThirdPersonCamera, Without<ThirdPersonTarget>)>,
+    query_target: Query<(&Transform, With<ThirdPersonTarget>)>
+){
+    let (mut camera_transform, mut thridperson,_) = query_camera.single_mut();
+    let (target_transform,_) = query_target.single();
+    let t = thridperson.follow * time.delta_seconds();
+
+    let mut offset = thridperson.ideal_offset.clone();
+    offset += target_transform.translation;
+    offset = camera_transform.translation.lerp(offset,t);
+
+    let mut lookat = thridperson.ideal_lookat.clone();
+    lookat+= target_transform.translation;
+    if thridperson.lookat_aviabel {
+        lookat = thridperson.current_lookat.lerp(lookat, t);
+    } else{
+        thridperson.lookat_aviabel = true;
+    }
+
+    thridperson.current_lookat = lookat;
+
+    let transform = Transform::from_translation(offset).looking_at(lookat, Vec3::Y);
+    camera_transform.translation = transform.translation;
+    camera_transform.rotation = transform.rotation
 }
 ```
