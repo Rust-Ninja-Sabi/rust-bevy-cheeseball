@@ -1,0 +1,13 @@
+[package]
+name = "rust-bevy-cheeseball"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bevy = "0.8"
+bevy_atmosphere = "0.4"
+bevy_rapier3d = { version = "*", features = [ "simd-stable", "debug-render" ] }
+rand = "*"
+
